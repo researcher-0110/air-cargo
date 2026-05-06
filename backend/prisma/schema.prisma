@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Customer {
+  id        String     @id @default(uuid())
+  name      String
+  email     String     @unique
+  phone     String?
+  company   String?
+  address   String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  shipments Shipment[]
+
+  @@map("customers")
+}
+
+model Shipment {
+  id            String          @id @default(uuid())
+  awbNumber     String          @unique
+  origin        String
+  destination   String
+  weight        Float
+  length        Float?
+  width         Float?
+  height        Float?
+  status        ShipmentStatus  @default(BOOKED)
+  description   String?
+  customerId    String
+  customer      Customer        @relation(fields: [customerId], references: [id])
+  bookedDate    DateTime        @default(now())
+  estimatedDate DateTime?
+  deliveredDate DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  statusHistory StatusUpdate[]
+
+  @@map("shipments")
+}
+
+model StatusUpdate {
+  id         String         @id @default(uuid())
+  shipmentId String
+  shipment   Shipment       @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  status     ShipmentStatus
+  location   String?
+  notes      String?
+  timestamp  DateTime       @default(now())
+
+  @@map("status_updates")
+}
+
+enum Role {
+  ADMIN
+}
+
+enum ShipmentStatus {
+  BOOKED
+  ACCEPTED
+  IN_TRANSIT
+  ARRIVED
+  DELIVERED
+}
